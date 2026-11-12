@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="工程记账本" />
+  <title>工程随手记 · 项目现金流与花费账本</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --sub: #64748b;
+      --muted: #94a3b8;
+      --line: #e2e8f0;
+      --brand: #059669;
+      --brand-dark: #047857;
+      --brand-soft: #ecfdf5;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --warn-bg: #fffbeb;
+      --warn-border: #fde68a;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0;
+      background: #e8edf3;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .app-shell {
+      max-width: 480px;
+      min-height: 100vh;
+      margin: 0 auto;
+      background: var(--bg);
+      position: relative;
+      padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+      box-shadow: 0 0 40px rgba(15, 23, 42, 0.12);
+    }
+    /* Header Hero Wallet */
+    .hero {
+      background: linear-gradient(145deg, #064e3b 0%, #059669 60%, #10b981 100%);
+      color: #fff;
+      padding: calc(18px + env(safe-area-inset-top, 0px)) 18px 22px;
+      border-bottom-left-radius: 26px;
+      border-bottom-right-radius: 26px;
+      box-shadow: 0 10px 25px rgba(5, 150, 105, 0.22);
+    }
+    .hero-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .hero-title {
+      font-size: 16px; font-weight: 700; letter-spacing: 0.3px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .hero-badge {
+      font-size: 12px; background: rgba(255,255,255,0.18);
+      padding: 4px 10px; border-radius: 999px; font-weight: 500;
+      cursor: pointer; border: 1px solid rgba(255,255,255,0.25);
+    }
+    .cash-label {
+      font-size: 12px; opacity: 0.86; display: flex; align-items: center; gap: 6px;
+    }
+    .cash-amount {
+      font-size: 34px; font-weight: 800; letter-spacing: -0.5px;
+      margin: 4px 0 12px; font-variant-numeric: tabular-nums;
+    }
+    .progress-wrap {
+      background: rgba(255,255,255,0.18); height: 7px; border-radius: 999px;
+      overflow: hidden; margin-bottom: 6px;
+    }
+    .progress-bar {
+      height: 100%; background: #fbbf24; border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+    .progress-caption {
+      display: flex; justify-content: space-between;
+      font-size: 12px; opacity: 0.88; margin-bottom: 14px;
+    }
+    .hero-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+      background: rgba(0, 0, 0, 0.16);
+      padding: 11px 10px; border-radius: 14px;
+      backdrop-filter: blur(6px);
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat + .hero-stat { border-left: 1px solid rgba(255,255,255,0.16); }
+    .hero-stat-lbl { font-size: 12px; opacity: 0.82; }
+    .hero-stat-val {
+      font-size: 14px; font-weight: 700; margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Audit Notice Card */
+    .section { padding: 12px 14px 0; }
+    .audit-card {
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);
+    }
+    .audit-header {
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer;
+    }
+    .audit-title {
+      font-size: 13px; font-weight: 700; color: #92400e;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .audit-toggle { font-size: 12px; color: #b45309; font-weight: 600; }
+    .audit-body { margin-top: 10px; border-top: 1px dashed #fcd34d; padding-top: 10px; }
+    .audit-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 7px 0; border-bottom: 1px solid rgba(251, 191, 36, 0.25);
+    }
+    .audit-item:last-child { border-bottom: none; }
+    .audit-item-info { flex: 1; min-width: 0; }
+    .audit-item-name { font-size: 13px; font-weight: 600; color: #78350f; }
+    .audit-item-desc { font-size: 12px; color: #92400e; opacity: 0.9; }
+    .audit-btns { display: flex; gap: 5px; shrink: 0; }
+    .btn-xs {
+      border: none; border-radius: 8px; padding: 5px 9px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .btn-amber { background: #f59e0b; color: #fff; }
+    .btn-ghost { background: rgba(255,255,255,0.8); color: #78350f; border: 1px solid #fcd34d; }
+
+    /* Cards & Filters */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      margin-bottom: 12px;
+    }
+    .filter-bar {
+      display: flex; gap: 8px; margin-bottom: 10px;
+    }
+    .input-search, .select-pill {
+      height: 38px; border-radius: 12px; border: 1px solid var(--line);
+      background: #fff; padding: 0 12px; font-size: 13px; color: var(--text);
+      outline: none;
+    }
+    .input-search { flex: 1; min-width: 0; }
+    .input-search:focus, .select-pill:focus { border-color: var(--brand); }
+    .cat-chips {
+      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px;
+      scrollbar-width: none;
+    }
+    .cat-chips::-webkit-scrollbar { display: none; }
+    .chip {
+      white-space: nowrap; padding: 6px 12px; border-radius: 999px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      background: #fff; color: var(--sub); border: 1px solid var(--line);
+      transition: all 0.15s;
+    }
+    .chip.active {
+      background: var(--brand); color: #fff; border-color: var(--brand);
+      box-shadow: 0 3px 10px rgba(5, 150, 105, 0.25);
+    }
+
+    /* Day Group List (Shark Ledger style) */
+    .day-group {
+      background: var(--card); border-radius: 16px;
+      margin-bottom: 10px; overflow: hidden;
+      box-shadow: 0 3px 12px rgba(15, 23, 42, 0.04);
+    }
+    .day-head {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 9px 14px; background: #f8fafc;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 12px; color: var(--sub); font-weight: 600;
+    }
+    .tx-row {
+      display: flex; align-items: center; gap: 11px;
+      padding: 12px 14px; border-bottom: 1px solid #f1f5f9;
+      cursor: pointer; transition: background 0.12s;
+    }
+    .tx-row:last-child { border-bottom: none; }
+    .tx-row:active { background: #f8fafc; }
+    .tx-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 19px; flex-shrink: 0;
+    }
+    .tx-main { flex: 1; min-width: 0; }
+    .tx-title {
+      font-size: 14px; font-weight: 600; color: var(--text);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .tx-sub {
+      font-size: 12px; color: var(--sub); margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .tx-amt {
+      font-size: 15px; font-weight: 700; text-align: right;
+      font-variant-numeric: tabular-nums; flex-shrink: 0;
+    }
+    .amt-exp { color: var(--text); }
+    .amt-inc { color: var(--brand); }
+    .badge-warn {
+      font-size: 12px; background: #fef3c7; color: #b45309;
+      padding: 1px 6px; border-radius: 6px; font-weight: 600;
+    }
+
+    /* Charts Tab */
+    .donut-box {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 8px 0 12px;
+    }
+    .donut-wrap {
+      position: relative; width: 200px; height: 200px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .donut-center {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      pointer-events: none; text-align: center; padding: 0 24px;
+    }
+    .rank-row {
+      padding: 10px 4px; border-bottom: 1px solid #f1f5f9; cursor: pointer;
+    }
+    .rank-row:last-child { border-bottom: none; }
+    .rank-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .rank-bar-bg {
+      height: 6px; background: #f1f5f9; border-radius: 999px; overflow: hidden;
+    }
+    .rank-bar-fg { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+    .rank-detail {
+      margin-top: 8px; background: #f8fafc; border-radius: 10px; padding: 6px 10px;
+      font-size: 12px; color: var(--sub);
+    }
+    .rank-detail-item {
+      display: flex; justify-content: space-between; padding: 4px 0;
+      border-bottom: 1px dashed #e2e8f0;
+    }
+    .rank-detail-item:last-child { border-bottom: none; }
+
+    /* Monthly Bar Chart */
+    .month-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px;
+    }
+    .month-lbl { width: 62px; color: var(--sub); font-weight: 600; flex-shrink: 0; }
+    .month-track { flex: 1; height: 10px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+    .month-fill { height: 100%; background: linear-gradient(90deg, #10b981, #059669); border-radius: 999px; }
+    .month-val { width: 82px; text-align: right; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+
+    /* Bottom Navigation Bar */
+    .tabbar {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: 1fr 1fr 76px 1fr 1fr;
+      align-items: center;
+      padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+      z-index: 40;
+    }
+    .tab-btn {
+      border: none; background: none; padding: 4px 0;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      color: var(--sub); font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .tab-btn.active { color: var(--brand); }
+    .tab-ico { font-size: 20px; line-height: 1.1; }
+    .fab-wrap { display: flex; flex-direction: column; align-items: center; }
+    .fab-btn {
+      width: 54px; height: 54px; border-radius: 50%;
+      border: none; cursor: pointer;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff; font-size: 28px; font-weight: 400;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: -24px;
+      box-shadow: 0 8px 20px rgba(5, 150, 105, 0.38);
+      transition: transform 0.15s;
+    }
+    .fab-btn:active { transform: scale(0.94); }
+    .fab-lbl { font-size: 12px; font-weight: 700; color: var(--brand); margin-top: 2px; }
+
+    /* Modal Sheet */
+    .modal-mask {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.48);
+      z-index: 80; display: none; align-items: flex-end; justify-content: center;
+    }
+    .modal-mask.open { display: flex; }
+    .modal-sheet {
+      width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto;
+      background: #fff;
+      border-top-left-radius: 24px; border-top-right-radius: 24px;
+      padding: 16px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+      animation: slideUp 0.22s ease-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .seg-bar {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+      background: #f1f5f9; padding: 4px; border-radius: 12px; margin-bottom: 14px;
+    }
+    .seg-btn {
+      border: none; background: transparent; padding: 8px 4px;
+      border-radius: 9px; font-size: 13px; font-weight: 700; color: var(--sub);
+      cursor: pointer;
+    }
+    .seg-btn.active { background: #fff; color: var(--text); box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+    .cat-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px;
+    }
+    .cat-pick {
+      border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 6px;
+      display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;
+      cursor: pointer; background: #fff; color: var(--text);
+    }
+    .cat-pick.active {
+      border-color: var(--brand); background: var(--brand-soft); color: var(--brand-dark);
+    }
+    .form-row { margin-bottom: 11px; }
+    .form-lbl { display: block; font-size: 12px; font-weight: 600; color: var(--sub); margin-bottom: 4px; }
+    .form-in {
+      width: 100%; height: 42px; border-radius: 12px; border: 1.5px solid var(--line);
+      padding: 0 12px; font-size: 15px; color: var(--text); outline: none; background: #f8fafc;
+    }
+    .form-in:focus { border-color: var(--brand); background: #fff; }
+    .form-in-big { font-size: 22px; font-weight: 800; height: 50px; color: var(--brand-dark); }
+    .quick-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .q-tag {
+      font-size: 12px; background: #f1f5f9; color: var(--sub);
+      padding: 4px 10px; border-radius: 999px; cursor: pointer;
+    }
+    .btn-primary {
+      width: 100%; height: 46px; border: none; border-radius: 14px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 6px 16px rgba(5, 150, 105, 0.28);
+    }
+    .btn-danger {
+      width: 100%; height: 42px; border: 1px solid #fecaca; border-radius: 12px;
+      background: #fef2f2; color: #dc2626; font-size: 14px; font-weight: 600;
+      cursor: pointer; margin-top: 8px;
+    }
+    .btn-outline {
+      width: 100%; height: 42px; border: 1px solid var(--line); border-radius: 12px;
+      background: #fff; color: var(--text); font-size: 14px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .toast {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.9); color: #fff;
+      padding: 9px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
+      z-index: 120; display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <div class="app-shell">
+    <!-- Top Wallet Card -->
+    <div class="hero">
+      <div class="hero-top">
+        <div class="hero-title">🏗️ 工程项目随手记</div>
+        <div class="hero-badge" onclick="openAddModal('income')">+ 记甲方回款</div>
+      </div>
+      <div class="cash-label">
+        <span>手上可用现金余额（元）</span>
+      </div>
+      <div id="hero-cash" class="cash-amount">¥0.00</div>
+      <div class="progress-wrap">
+        <div id="hero-bar" class="progress-bar" style="width: 0%"></div>
+      </div>
+      <div class="progress-caption">
+        <span id="hero-pool-txt">总资金池 ¥785,580.00</span>
+        <span id="hero-ratio-txt">已支出 86.4%</span>
+      </div>
+      <div class="hero-grid">
+        <div class="hero-stat" onclick="switchTab('wallet')" style="cursor:pointer">
+          <div class="hero-stat-lbl">甲方已回款</div>
+          <div id="stat-income" class="hero-stat-val">¥85,580.00</div>
+        </div>
+        <div class="hero-stat" onclick="switchTab('charts')" style="cursor:pointer">
+          <div class="hero-stat-lbl">工程总花费</div>
+          <div id="stat-expense" class="hero-stat-val">¥678,838.71</div>
+        </div>
+        <div class="hero-stat" onclick="switchTab('wallet')" style="cursor:pointer">
+          <div class="hero-stat-lbl">待还借款</div>
+          <div id="stat-loan" class="hero-stat-val">¥700,000.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit Banner (if unresolved items exist) -->
+    <div id="audit-container" class="section" style="display:none"></div>
+
+    <!-- TAB 1: 明细 (Ledger List) -->
+    <div id="view-list" class="section">
+      <div class="filter-bar">
+        <input id="search-input" class="input-search" type="search" placeholder="🔍 搜项目：苗木、石材、人工、吃饭..." oninput="renderList()" />
+        <select id="month-select" class="select-pill" onchange="renderList()"></select>
+      </div>
+      <div id="cat-filter-chips" class="cat-chips"></div>
+      <div id="list-summary-bar" style="display:flex;justify-content:space-between;font-size:12px;color:var(--sub);padding:6px 4px 8px;"></div>
+      <div id="tx-list-container"></div>
+    </div>
+
+    <!-- TAB 2: 图表 (Category Charts & Monthly Trend) -->
+    <div id="view-charts" class="section" style="display:none">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-size:15px;font-weight:700;">工程花费分类图示</div>
+          <span style="font-size:12px;color:var(--sub);">点击扇区或分类看明细</span>
+        </div>
+        <div class="donut-box">
+          <div class="donut-wrap">
+            <svg id="chart-donut" viewBox="0 0 180 180" style="width:200px;height:200px;transform:rotate(-90deg)"></svg>
+            <div class="donut-center">
+              <div id="donut-lbl" style="font-size:12px;color:var(--sub);">总工程花费</div>
+              <div id="donut-val" style="font-size:17px;font-weight:800;margin:2px 0;">¥0</div>
+              <div id="donut-pct" style="font-size:12px;color:var(--brand);font-weight:700;">100%</div>
+            </div>
+          </div>
+        </div>
+        <div id="rank-list"></div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:15px;font-weight:700;margin-bottom:12px;">📅 各月工程支出走势</div>
+        <div id="monthly-bars"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: 资金池 (Cash & Loan Breakdown) -->
+    <div id="view-wallet" class="section" style="display:none">
+      <div class="card">
+        <div style="font-size:15px;font-weight:700;margin-bottom:10px;">💰 手头现金计算单</div>
+        <div style="background:#f8fafc;border-radius:12px;padding:12px;font-size:13px;">
+          <div style="display:flex;justify-content:space-between;padding:5px 0;">
+            <span style="color:var(--sub);">➕ 累计工程借款流入</span>
+            <strong id="w-loan-in">¥700,000.00</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;">
+            <span style="color:var(--sub);">➖ 已归还借款本金</span>
+            <strong id="w-loan-out">¥0.00</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;">
+            <span style="color:var(--sub);">➕ 甲方累计已回款</span>
+            <strong id="w-income" style="color:var(--brand);">¥85,580.00</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed var(--line);">
+            <span style="color:var(--sub);">➖ 工程累计已支出</span>
+            <strong id="w-expense" style="color:var(--danger);">¥678,838.71</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0 2px;font-size:15px;">
+            <span style="font-weight:700;">＝ 当前手上可用现金</span>
+            <strong id="w-cash" style="color:var(--brand);font-size:18px;">¥106,741.29</strong>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
+          <button class="btn-outline" onclick="openAddModal('income')">➕ 记甲方新回款</button>
+          <button class="btn-outline" onclick="openAddModal('loan_repay')">💳 记归还借款</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:15px;font-weight:700;margin-bottom:10px;">🏦 借款与甲方回款记录</div>
+        <div id="funding-history"></div>
+      </div>
+    </div>
+
+    <!-- TAB 4: 备份与工具 -->
+    <div id="view-tools" class="section" style="display:none">
+      <div class="card">
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px;">📤 导出 Excel 与数据备份</div>
+        <p style="font-size:12px;color:var(--sub);margin:0 0 12px;">
+          记账数据自动保存在当前浏览器中。换手机或发给电脑对账时，可随时导出 Excel 表格或备份包。
+        </p>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <button class="btn-primary" onclick="exportCSV()">📊 导出最新 Excel 对账表 (.csv)</button>
+          <button class="btn-outline" onclick="exportJSON()">💾 保存完整记账备份包 (.json)</button>
+          <label class="btn-outline" style="margin:0;">
+            📂 导入恢复备份包 (.json)
+            <input type="file" accept=".json" style="display:none" onchange="importJSON(event)" />
+          </label>
+          <button class="btn-danger" onclick="resetToFactory()">🔄 恢复刚导入时的初始账本</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px;">📱 怎么放到手机上像 App 一样用？</div>
+        <div style="font-size:13px;color:var(--sub);line-height:1.65;">
+          1. 把电脑桌面 <strong>工程</strong> 文件夹里的 <code>工程记账本.html</code> 通过微信文件传输助手或隔空投送（AirDrop）发到手机。<br/>
+          2. 手机上选择<strong>「用系统浏览器 / Safari 打开」</strong>。<br/>
+          3. 点击浏览器底部分享按钮 → 选<strong>「添加到主屏幕」</strong>，桌面就会生成一个专属记账图标，随点随记！
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Tabbar -->
+    <div class="tabbar">
+      <button id="tab-list" class="tab-btn active" onclick="switchTab('list')">
+        <span class="tab-ico">📋</span><span>明细</span>
+      </button>
+      <button id="tab-charts" class="tab-btn" onclick="switchTab('charts')">
+        <span class="tab-ico">📊</span><span>分类图</span>
+      </button>
+      <div class="fab-wrap">
+        <button class="fab-btn" onclick="openAddModal('expense')" aria-label="记一笔">＋</button>
+        <span class="fab-lbl">记一笔</span>
+      </div>
+      <button id="tab-wallet" class="tab-btn" onclick="switchTab('wallet')">
+        <span class="tab-ico">💰</span><span>现金池</span>
+      </button>
+      <button id="tab-tools" class="tab-btn" onclick="switchTab('tools')">
+        <span class="tab-ico">⚙️</span><span>导出</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Add / Edit Modal -->
+  <div id="tx-modal" class="modal-mask" onclick="if(event.target===this)closeModal()">
+    <div class="modal-sheet">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div id="modal-heading" style="font-size:16px;font-weight:800;">记一笔工程流水</div>
+        <button onclick="closeModal()" style="border:none;background:#f1f5f9;width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;">✕</button>
+      </div>
+
+      <div class="seg-bar">
+        <button id="seg-expense" class="seg-btn active" onclick="setFormType('expense')">💸 工程支出</button>
+        <button id="seg-income" class="seg-btn" onclick="setFormType('income')">🏦 甲方回款</button>
+        <button id="seg-loan" class="seg-btn" onclick="setFormType('loan_repay')">💳 借/还款</button>
+      </div>
+
+      <div id="loan-sub-seg" style="display:none;margin-bottom:12px;gap:8px;">
+        <button id="btn-loan-repay" class="chip active" onclick="setFormType('loan_repay')">➖ 归还借款本金</button>
+        <button id="btn-loan-in" class="chip" onclick="setFormType('loan_in')">➕ 新增工程借款</button>
+      </div>
+
+      <div id="cat-picker-wrap">
+        <span class="form-lbl">选择分类</span>
+        <div id="modal-cat-grid" class="cat-grid"></div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-lbl">事项内容</label>
+        <input id="f-title" class="form-in" type="text" placeholder="例如：买水泥、苗木尾款、工人盒饭..." />
+        <div id="quick-tag-row" class="quick-tags"></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" class="form-row">
+        <div>
+          <label class="form-lbl">数量（选填，自动算总价）</label>
+          <input id="f-qty" class="form-in" type="number" step="any" placeholder="1" oninput="calcTotalFromQty()" />
+        </div>
+        <div>
+          <label class="form-lbl">单价（元，选填）</label>
+          <input id="f-price" class="form-in" type="number" step="any" placeholder="0.00" oninput="calcTotalFromQty()" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-lbl">总金额（元）*</label>
+        <input id="f-amount" class="form-in form-in-big" type="number" step="0.01" placeholder="0.00" />
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" class="form-row">
+        <div>
+          <label class="form-lbl">发生日期</label>
+          <input id="f-date" class="form-in" type="date" />
+        </div>
+        <div>
+          <label class="form-lbl">备注说明（选填）</label>
+          <input id="f-note" class="form-in" type="text" placeholder="收款人/票据情况..." />
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="saveRecord()">✔ 保存入账</button>
+      <button id="btn-delete-tx" class="btn-danger" style="display:none" onclick="deleteCurrentRecord()">🗑 删除这笔记录</button>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'frank_eng_ledger_v1';
+
+    const CATEGORIES = [
+      { key: '苗木绿化采购', icon: '🌿', color: '#10b981', bg: '#ecfdf5', tags: ['苗木采购', '草皮', '绣球', '营养土', '补种苗木'] },
+      { key: '人工劳务',     icon: '👷', color: '#3b82f6', bg: '#eff6ff', tags: ['绿化人工', '劳务进度款', '零工工资', '安装人工'] },
+      { key: '石材与硬景建材', icon: '🪨', color: '#f59e0b', bg: '#fffbeb', tags: ['石材款', '黄沙水泥', '混凝土桩', '井盖管材', '土方'] },
+      { key: '景观小品与广告', icon: '🎠', color: '#8b5cf6', bg: '#f5f3ff', tags: ['景观雕塑', '标识广告牌', '休闲座椅', '秋千配件'] },
+      { key: '机械运输与清运', icon: '🚜', color: '#06b6d4', bg: '#ecfeff', tags: ['挖机台班', '运费', '垃圾清运', '吊车机械费', '钢板租赁'] },
+      { key: '五金工具与辅材', icon: '🔧', color: '#64748b', bg: '#f1f5f9', tags: ['五金螺丝', '水管喷头', '尼龙绳扎带', '垃圾袋', '工具采购'] },
+      { key: '餐饮后勤与招待', icon: '🍱', color: '#ec4899', bg: '#fdf2f8', tags: ['工地工作餐', '买水/奶茶', '烟酒招待', '过节礼品', '停车费'] },
+      { key: '招投标及前期',   icon: '📋', color: '#6366f1', bg: '#eef2ff', tags: ['招标代理费', '评审/咨询费', '图纸打印', '税费开票'] },
+      { key: '待确认款项',     icon: '❓', color: '#ef4444', bg: '#fef2f2', tags: ['待核实支出', '其他杂费'] }
+    ];
+
+    const CAT_MAP = {};
+    CATEGORIES.forEach(c => { CAT_MAP[c.key] = c; });
+
+    const INITIAL_RECORDS = [{"id": "fund_loan_init", "type": "loan_in", "date": "2025-09-17", "title": "项目启动借款", "category": "工程借款", "qty": 1, "unitPrice": 700000.0, "amount": 700000.0, "note": "初始工程借款本金 70万元", "audit": null}, {"id": "fund_income_init", "type": "income", "date": "2026-11-12", "title": "甲方工程回款（已到账）", "category": "甲方回款", "qty": 1, "unitPrice": 85580.0, "amount": 85580.0, "note": "目前已收到甲方回款 85,580元", "audit": null}, {"id": "init_3", "excelRow": 3, "type": "expense", "date": "2025-09-17", "title": "月饼采购", "category": "餐饮后勤与招待", "qty": 20.0, "unitPrice": 168.0, "amount": 3360.0, "note": "数量:20 × 单价:168", "audit": null}, {"id": "init_4", "excelRow": 4, "type": "expense", "date": "2025-09-17", "title": "卷尺", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 30.0, "amount": 30.0, "note": "", "audit": null}, {"id": "init_5", "excelRow": 5, "type": "expense", "date": "2025-09-19", "title": "云朵秋千采购", "category": "景观小品与广告", "qty": 1.0, "unitPrice": 6500.0, "amount": 6500.0, "note": "", "audit": null}, {"id": "init_6", "excelRow": 6, "type": "expense", "date": "2025-09-19", "title": "电动三轮车", "category": "机械运输与清运", "qty": 1.0, "unitPrice": 2600.0, "amount": 2600.0, "note": "", "audit": null}, {"id": "init_7", "excelRow": 7, "type": "expense", "date": "2025-09-19", "title": "烧仙草+入口植物采购", "category": "苗木绿化采购", "qty": 1.0, "unitPrice": 12500.0, "amount": 12500.0, "note": "", "audit": null}, {"id": "init_8", "excelRow": 8, "type": "expense", "date": "2025-09-19", "title": "植物运费", "category": "机械运输与清运", "qty": 1.0, "unitPrice": 700.0, "amount": 700.0, "note": "", "audit": null}, {"id": "init_9", "excelRow": 9, "type": "expense", "date": "2025-09-22", "title": "水泵", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 470.0, "amount": 470.0, "note": "", "audit": null}, {"id": "init_10", "excelRow": 10, "type": "expense", "date": "2025-09-22", "title": "吃饭", "category": "餐饮后勤与招待", "qty": 6.0, "unitPrice": 15.0, "amount": 90.0, "note": "数量:6 × 单价:15", "audit": null}, {"id": "init_11", "excelRow": 11, "type": "expense", "date": "2025-09-23", "title": "吃饭", "category": "餐饮后勤与招待", "qty": 7.0, "unitPrice": 15.0, "amount": 105.0, "note": "数量:7 × 单价:15", "audit": null}, {"id": "init_12", "excelRow": 12, "type": "expense", "date": "2025-09-23", "title": "水费", "category": "餐饮后勤与招待", "qty": 5.0, "unitPrice": 3.0, "amount": 15.0, "note": "数量:5 × 单价:3", "audit": null}, {"id": "init_13", "excelRow": 13, "type": "expense", "date": "2025-09-23", "title": "秋千安装工人费用", "category": "人工劳务", "qty": 1.0, "unitPrice": 100.0, "amount": 100.0, "note": "", "audit": null}, {"id": "init_14", "excelRow": 14, "type": "expense", "date": "2025-09-23", "title": "黑色塑料袋", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 25.26, "amount": 25.26, "note": "", "audit": null}, {"id": "init_15", "excelRow": 15, "type": "expense", "date": "2025-09-23", "title": "警戒带", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 19.3, "amount": 19.3, "note": "", "audit": null}, {"id": "init_16", "excelRow": 16, "type": "expense", "date": "2025-09-23", "title": "水费", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 50.0, "amount": 50.0, "note": "", "audit": null}, {"id": "init_17", "excelRow": 17, "type": "expense", "date": "2025-09-25", "title": "吃饭", "category": "餐饮后勤与招待", "qty": 6.0, "unitPrice": 15.0, "amount": 90.0, "note": "数量:6 × 单价:15", "audit": null}, {"id": "init_18", "excelRow": 18, "type": "expense", "date": "2025-09-26", "title": "黄沙", "category": "石材与硬景建材", "qty": 1.0, "unitPrice": 260.0, "amount": 260.0, "note": "", "audit": null}, {"id": "init_19", "excelRow": 19, "type": "expense", "date": "2025-09-26", "title": "吃饭", "category": "餐饮后勤与招待", "qty": 6.0, "unitPrice": 15.0, "amount": 90.0, "note": "数量:6 × 单价:15", "audit": null}, {"id": "init_20", "excelRow": 20, "type": "expense", "date": "2025-09-26", "title": "4天人工", "category": "人工劳务", "qty": 19.0, "unitPrice": 200.0, "amount": 3800.0, "note": "数量:19 × 单价:200", "audit": null}, {"id": "init_21", "excelRow": 21, "type": "expense", "date": "2025-09-28", "title": "工作牌费用", "category": "五金工具与辅材", "qty": 6.0, "unitPrice": 50.0, "amount": 300.0, "note": "数量:6 × 单价:50", "audit": null}, {"id": "init_22", "excelRow": 22, "type": "expense", "date": "2025-09-29", "title": "吃饭", "category": "餐饮后勤与招待", "qty": 6.0, "unitPrice": 15.0, "amount": 90.0, "note": "数量:6 × 单价:15", "audit": null}, {"id": "init_23", "excelRow": 23, "type": "expense", "date": "2025-09-29", "title": "水管收纳工具", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 52.0, "amount": 52.0, "note": "", "audit": null}, {"id": "init_24", "excelRow": 24, "type": "expense", "date": "2025-09-29", "title": "浇水喷头", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 11.4, "amount": 11.4, "note": "", "audit": null}, {"id": "init_25", "excelRow": 25, "type": "expense", "date": "2025-09-29", "title": "测亩仪", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 127.0, "amount": 127.0, "note": "", "audit": null}, {"id": "init_26", "excelRow": 26, "type": "expense", "date": "2025-09-29", "title": "9.29人工", "category": "人工劳务", "qty": 2.0, "unitPrice": 200.0, "amount": 400.0, "note": "数量:2 × 单价:200", "audit": null}, {"id": "init_27", "excelRow": 27, "type": "expense", "date": "2025-09-30", "title": "招标代理费用及专家评审费", "category": "招投标及前期", "qty": 1.0, "unitPrice": 6900.0, "amount": 6900.0, "note": "", "audit": null}, {"id": "init_28", "excelRow": 28, "type": "expense", "date": "2025-09-30", "title": "浩通费用", "category": "招投标及前期", "qty": 1.0, "unitPrice": 1200.0, "amount": 1200.0, "note": "", "audit": null}, {"id": "init_29", "excelRow": 29, "type": "expense", "date": "2025-10-18", "title": "石材预付", "category": "石材与硬景建材", "qty": 1.0, "unitPrice": 30000.0, "amount": 30000.0, "note": "", "audit": null}, {"id": "init_30", "excelRow": 30, "type": "expense", "date": "2025-10-18", "title": "58棵樱花+9棵红枫+运费", "category": "苗木绿化采购", "qty": 1.0, "unitPrice": 31980.0, "amount": 31980.0, "note": "明细构成:7840+13600+2050+2450+6040", "audit": null}, {"id": "init_31", "excelRow": 31, "type": "expense", "date": "2025-10-21", "title": "饭", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 60.0, "amount": 60.0, "note": "", "audit": null}, {"id": "init_32", "excelRow": 32, "type": "expense", "date": "2025-10-21", "title": "水果卡", "category": "餐饮后勤与招待", "qty": 5.0, "unitPrice": 500.0, "amount": 0.0, "note": "数量:5 × 单价:500；⚠️原表漏算¥2500", "audit": {"type": "missing_formula", "suggested_amt": 2500.0, "desc": "原表填了数量5×单价500，但金额格漏拉公式为空"}}, {"id": "init_33", "excelRow": 33, "type": "expense", "date": "2025-10-21", "title": "中华木绣球+运费", "category": "苗木绿化采购", "qty": 1.0, "unitPrice": 32000.0, "amount": 32000.0, "note": "明细构成:22400+850+1600+7150", "audit": null}, {"id": "init_34", "excelRow": 34, "type": "expense", "date": "2025-10-21", "title": "扁担+运费", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 1824.0, "amount": 1824.0, "note": "明细构成:1497+255+72", "audit": null}, {"id": "init_35", "excelRow": 35, "type": "expense", "date": "2025-10-21", "title": "二月兰种子+运费", "category": "苗木绿化采购", "qty": 1.0, "unitPrice": 885.0, "amount": 885.0, "note": "明细构成:855+30", "audit": null}, {"id": "init_36", "excelRow": 36, "type": "expense", "date": "2025-10-21", "title": "种植土+运费", "category": "苗木绿化采购", "qty": 1.0, "unitPrice": 15700.0, "amount": 15700.0, "note": "明细构成:14000+1700", "audit": null}, {"id": "init_37", "excelRow": 37, "type": "expense", "date": "2025-10-21", "title": "黄石70t", "category": "石材与硬景建材", "qty": 1.0, "unitPrice": 19500.0, "amount": 19500.0, "note": "", "audit": null}, {"id": "init_38", "excelRow": 38, "type": "expense", "date": "2025-10-22", "title": "饭", "category": "餐饮后勤与招待", "qty": 3.0, "unitPrice": 15.0, "amount": 45.0, "note": "数量:3 × 单价:15", "audit": null}, {"id": "init_39", "excelRow": 39, "type": "expense", "date": "2025-10-22", "title": "碧桃+穗花牡荆 32株+运费", "category": "苗木绿化采购", "qty": 1.0, "unitPrice": 21600.0, "amount": 21600.0, "note": "明细构成:14080+3100+3200+1220", "audit": null}, {"id": "init_40", "excelRow": 40, "type": "expense", "date": "2025-10-22", "title": "烟", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 390.0, "amount": 390.0, "note": "", "audit": null}, {"id": "init_41", "excelRow": 41, "type": "expense", "date": "2025-10-22", "title": "电瓶车电池", "category": "机械运输与清运", "qty": 1.0, "unitPrice": 350.0, "amount": 350.0, "note": "", "audit": null}, {"id": "init_42", "excelRow": 42, "type": "expense", "date": "2025-10-29", "title": "绣球4000颗", "category": "苗木绿化采购", "qty": 1.0, "unitPrice": 25000.0, "amount": 25000.0, "note": "明细构成:24000+1000", "audit": null}, {"id": "init_43", "excelRow": 43, "type": "expense", "date": "2025-10-29", "title": "4天饭", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 150.0, "amount": 150.0, "note": "", "audit": null}, {"id": "init_44", "excelRow": 44, "type": "expense", "date": "2025-10-27", "title": "秋千配件", "category": "景观小品与广告", "qty": 1.0, "unitPrice": 67.4, "amount": 67.4, "note": "明细构成:45+22.4", "audit": null}, {"id": "init_45", "excelRow": 45, "type": "expense", "date": "2025-10-25", "title": "井盖", "category": "石材与硬景建材", "qty": 1.0, "unitPrice": 447.0, "amount": 447.0, "note": "明细构成:327+120", "audit": null}, {"id": "init_46", "excelRow": 46, "type": "expense", "date": "2025-10-24", "title": "下水管d100 33根+套子", "category": "石材与硬景建材", "qty": 1.0, "unitPrice": 1350.0, "amount": 1350.0, "note": "", "audit": null}, {"id": "init_47", "excelRow": 47, "type": "expense", "date": "2025-10-24", "title": "安全隔离带", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 56.7, "amount": 56.7, "note": "", "audit": null}, {"id": "init_48", "excelRow": 48, "type": "expense", "date": "2025-10-24", "title": "饭", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 30.0, "amount": 30.0, "note": "", "audit": null}, {"id": "init_49", "excelRow": 49, "type": "expense", "date": "2025-10-24", "title": "混凝土桩", "category": "石材与硬景建材", "qty": 1.0, "unitPrice": 6750.0, "amount": 6750.0, "note": "", "audit": null}, {"id": "init_50", "excelRow": 50, "type": "expense", "date": "2025-10-30", "title": "运费", "category": "机械运输与清运", "qty": 1.0, "unitPrice": 1000.0, "amount": 1000.0, "note": "", "audit": null}, {"id": "init_51", "excelRow": 51, "type": "expense", "date": "2025-10-30", "title": "饭", "category": "餐饮后勤与招待", "qty": 4.0, "unitPrice": 15.0, "amount": 60.0, "note": "数量:4 × 单价:15", "audit": null}, {"id": "init_52", "excelRow": 52, "type": "expense", "date": "2025-10-30", "title": "黄石机械费用", "category": "机械运输与清运", "qty": 1.0, "unitPrice": 4300.0, "amount": 4300.0, "note": "", "audit": null}, {"id": "init_53", "excelRow": 53, "type": "expense", "date": "2025-10-31", "title": "扳手费用", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 12.0, "amount": 12.0, "note": "", "audit": null}, {"id": "init_54", "excelRow": 54, "type": "expense", "date": "2025-11-05", "title": "尼龙扎带", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 3.59, "amount": 3.59, "note": "", "audit": null}, {"id": "init_55", "excelRow": 55, "type": "expense", "date": "2025-10-31", "title": "瑞祥卡", "category": "餐饮后勤与招待", "qty": 5.0, "unitPrice": 1000.0, "amount": 5000.0, "note": "数量:5 × 单价:1000", "audit": null}, {"id": "init_56", "excelRow": 56, "type": "expense", "date": "2025-11-01", "title": "草皮300马尼拉 100百慕大", "category": "苗木绿化采购", "qty": 1.0, "unitPrice": 2650.0, "amount": 2650.0, "note": "", "audit": null}, {"id": "init_57", "excelRow": 57, "type": "expense", "date": "2025-11-01", "title": "饭", "category": "餐饮后勤与招待", "qty": 3.0, "unitPrice": 15.0, "amount": 45.0, "note": "数量:3 × 单价:15", "audit": null}, {"id": "init_58", "excelRow": 58, "type": "expense", "date": "2025-11-02", "title": "梅花坞地块植物", "category": "苗木绿化采购", "qty": 1.0, "unitPrice": 26900.0, "amount": 26900.0, "note": "明细构成:25900+1000", "audit": null}, {"id": "init_59", "excelRow": 59, "type": "expense", "date": "2025-11-02", "title": "红木香爬网", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 38.36, "amount": 38.36, "note": "", "audit": null}, {"id": "init_60", "excelRow": 60, "type": "expense", "date": "2025-11-03", "title": "饭", "category": "餐饮后勤与招待", "qty": 3.0, "unitPrice": 15.0, "amount": 45.0, "note": "数量:3 × 单价:15", "audit": null}, {"id": "init_61", "excelRow": 61, "type": "expense", "date": "2025-11-04", "title": "饭", "category": "餐饮后勤与招待", "qty": 4.0, "unitPrice": 15.0, "amount": 60.0, "note": "数量:4 × 单价:15", "audit": null}, {"id": "init_62", "excelRow": 62, "type": "expense", "date": "2025-11-05", "title": "螺丝配件", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 3.6, "amount": 3.6, "note": "", "audit": null}, {"id": "init_63", "excelRow": 63, "type": "expense", "date": "2025-11-05", "title": "补胎", "category": "机械运输与清运", "qty": 1.0, "unitPrice": 18.0, "amount": 18.0, "note": "", "audit": null}, {"id": "init_64", "excelRow": 64, "type": "expense", "date": "2025-11-05", "title": "饭", "category": "餐饮后勤与招待", "qty": 3.0, "unitPrice": 15.0, "amount": 45.0, "note": "数量:3 × 单价:15", "audit": null}, {"id": "init_65", "excelRow": 65, "type": "expense", "date": "2025-11-06", "title": "饭", "category": "餐饮后勤与招待", "qty": 3.0, "unitPrice": 15.0, "amount": 45.0, "note": "数量:3 × 单价:15", "audit": null}, {"id": "init_66", "excelRow": 66, "type": "expense", "date": "2025-11-10", "title": "饭", "category": "餐饮后勤与招待", "qty": 6.0, "unitPrice": 15.0, "amount": 90.0, "note": "数量:6 × 单价:15", "audit": null}, {"id": "init_67", "excelRow": 67, "type": "expense", "date": "2025-11-12", "title": "樱花林绿化", "category": "苗木绿化采购", "qty": 1.0, "unitPrice": 7472.0, "amount": 7472.0, "note": "明细构成:6872+600", "audit": null}, {"id": "init_68", "excelRow": 68, "type": "expense", "date": "2025-11-13", "title": "配钥匙", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 20.0, "amount": 20.0, "note": "", "audit": null}, {"id": "init_69", "excelRow": 69, "type": "expense", "date": "2025-11-13", "title": "餐费", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 15.0, "amount": 15.0, "note": "", "audit": null}, {"id": "init_70", "excelRow": 70, "type": "expense", "date": "2025-11-13", "title": "土方", "category": "石材与硬景建材", "qty": 1.0, "unitPrice": 1000.0, "amount": 1000.0, "note": "", "audit": null}, {"id": "init_71", "excelRow": 71, "type": "expense", "date": "2025-11-13", "title": "钢板租赁", "category": "机械运输与清运", "qty": 1.0, "unitPrice": 2700.0, "amount": 2700.0, "note": "", "audit": null}, {"id": "init_72", "excelRow": 72, "type": "expense", "date": "2025-11-13", "title": "星巴克", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 302.0, "amount": 302.0, "note": "", "audit": null}, {"id": "init_73", "excelRow": 73, "type": "expense", "date": "2025-11-14", "title": "尼龙绳520米", "category": "五金工具与辅材", "qty": 5.0, "unitPrice": 260.0, "amount": 1300.0, "note": "数量:5 × 单价:260", "audit": null}, {"id": "init_74", "excelRow": 74, "type": "expense", "date": "2025-11-14", "title": "铁红粉", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 200.0, "amount": 200.0, "note": "", "audit": null}, {"id": "init_75", "excelRow": 75, "type": "expense", "date": "2025-11-14", "title": "劳务预付", "category": "人工劳务", "qty": 1.0, "unitPrice": 50000.0, "amount": 50000.0, "note": "", "audit": null}, {"id": "init_76", "excelRow": 76, "type": "expense", "date": "2025-11-14", "title": "餐费", "category": "餐饮后勤与招待", "qty": 3.0, "unitPrice": 15.0, "amount": 45.0, "note": "数量:3 × 单价:15", "audit": null}, {"id": "init_77", "excelRow": 77, "type": "expense", "date": "2025-11-16", "title": "广告预付", "category": "景观小品与广告", "qty": 1.0, "unitPrice": 15000.0, "amount": 15000.0, "note": "", "audit": null}, {"id": "init_78", "excelRow": 78, "type": "expense", "date": "2025-11-16", "title": "井盖", "category": "石材与硬景建材", "qty": 2.0, "unitPrice": 76.0, "amount": 152.0, "note": "数量:2 × 单价:76", "audit": null}, {"id": "init_79", "excelRow": 79, "type": "expense", "date": "2025-11-16", "title": "井盖", "category": "石材与硬景建材", "qty": 2.0, "unitPrice": 28.0, "amount": 56.0, "note": "数量:2 × 单价:28", "audit": null}, {"id": "init_80", "excelRow": 80, "type": "expense", "date": "2025-11-16", "title": "苗木采购", "category": "苗木绿化采购", "qty": 1.0, "unitPrice": 12138.0, "amount": 12138.0, "note": "明细构成:10588+750+800", "audit": null}, {"id": "init_81", "excelRow": 81, "type": "expense", "date": "2025-11-16", "title": "秋千链条", "category": "景观小品与广告", "qty": 1.0, "unitPrice": 80.5, "amount": 80.5, "note": "", "audit": null}, {"id": "init_82", "excelRow": 82, "type": "expense", "date": "2025-11-17", "title": "餐费", "category": "餐饮后勤与招待", "qty": 2.0, "unitPrice": 15.0, "amount": 30.0, "note": "数量:2 × 单价:15", "audit": null}, {"id": "init_83", "excelRow": 83, "type": "expense", "date": "2025-11-17", "title": "尼龙绳520米", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 1300.0, "amount": 1300.0, "note": "", "audit": null}, {"id": "init_84", "excelRow": 84, "type": "expense", "date": "2025-11-17", "title": "螺丝钉", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 49.0, "amount": 49.0, "note": "", "audit": null}, {"id": "init_85", "excelRow": 85, "type": "expense", "date": "2025-11-18", "title": "猫咪雕塑", "category": "景观小品与广告", "qty": 1.0, "unitPrice": 5150.0, "amount": 5150.0, "note": "", "audit": null}, {"id": "init_86", "excelRow": 86, "type": "expense", "date": "2025-11-18", "title": "餐费", "category": "餐饮后勤与招待", "qty": 2.0, "unitPrice": 15.0, "amount": 30.0, "note": "数量:2 × 单价:15", "audit": null}, {"id": "init_87", "excelRow": 87, "type": "expense", "date": "2025-11-18", "title": "100平方草皮", "category": "苗木绿化采购", "qty": 1.0, "unitPrice": 810.0, "amount": 810.0, "note": "明细构成:550+260", "audit": null}, {"id": "init_88", "excelRow": 88, "type": "expense", "date": "2025-11-18", "title": "椅子3个", "category": "景观小品与广告", "qty": 1.0, "unitPrice": 1524.0, "amount": 1524.0, "note": "", "audit": null}, {"id": "init_89", "excelRow": 89, "type": "expense", "date": "2025-11-19", "title": "金属件", "category": "五金工具与辅材", "qty": 1.0, "unitPrice": 17.0, "amount": 17.0, "note": "", "audit": null}, {"id": "init_90", "excelRow": 90, "type": "expense", "date": "2025-11-19", "title": "餐费", "category": "餐饮后勤与招待", "qty": 3.0, "unitPrice": 15.0, "amount": 45.0, "note": "数量:3 × 单价:15", "audit": null}, {"id": "init_91", "excelRow": 91, "type": "expense", "date": "2025-11-19", "title": "喜茶", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 236.0, "amount": 236.0, "note": "", "audit": null}, {"id": "init_92", "excelRow": 92, "type": "expense", "date": "2025-11-20", "title": "停车费", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 5.6, "amount": 5.6, "note": "", "audit": null}, {"id": "init_93", "excelRow": 93, "type": "expense", "date": "2025-11-20", "title": "餐费", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 65.0, "amount": 65.0, "note": "", "audit": null}, {"id": "init_94", "excelRow": 94, "type": "expense", "date": "2025-11-21", "title": "餐费", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 60.0, "amount": 60.0, "note": "", "audit": null}, {"id": "init_95", "excelRow": 95, "type": "expense", "date": "2025-12-02", "title": "垃圾清运", "category": "机械运输与清运", "qty": 1.0, "unitPrice": 5400.0, "amount": 5400.0, "note": "", "audit": null}, {"id": "init_96", "excelRow": 96, "type": "expense", "date": "2025-11-24", "title": "餐费", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 40.0, "amount": 40.0, "note": "", "audit": null}, {"id": "init_97", "excelRow": 97, "type": "expense", "date": "2025-11-24", "title": "餐费", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 33.0, "amount": 33.0, "note": "", "audit": null}, {"id": "init_98", "excelRow": 98, "type": "expense", "date": "2025-11-26", "title": "猫咪雕塑", "category": "景观小品与广告", "qty": 1.0, "unitPrice": 65.8, "amount": 65.8, "note": "", "audit": null}, {"id": "init_99", "excelRow": 99, "type": "expense", "date": "2025-11-26", "title": "奶茶", "category": "餐饮后勤与招待", "qty": 1.0, "unitPrice": 167.2, "amount": 167.2, "note": "", "audit": null}, {"id": "init_100", "excelRow": 100, "type": "expense", "date": "2025-11-26", "title": "电瓶车充电器", "category": "机械运输与清运", "qty": 1.0, "unitPrice": 50.0, "amount": 50.0, "note": "", "audit": null}, {"id": "init_101", "excelRow": 101, "type": "expense", "date": "2025-11-27", "title": "快递", "category": "机械运输与清运", "qty": 1.0, "unitPrice": 18.0, "amount": 18.0, "note": "", "audit": null}, {"id": "init_102", "excelRow": 102, "type": "expense", "date": "2025-12-12", "title": "黄石围挡人工", "category": "人工劳务", "qty": 1.0, "unitPrice": 11100.0, "amount": 11100.0, "note": "明细构成:10700+400", "audit": null}, {"id": "init_103", "excelRow": 103, "type": "expense", "date": "2025-12-12", "title": "绿化人工", "category": "人工劳务", "qty": 1.0, "unitPrice": 78000.0, "amount": 78000.0, "note": "", "audit": null}, {"id": "init_104", "excelRow": 104, "type": "expense", "date": "2025-12-04", "title": "云朵雕塑", "category": "景观小品与广告", "qty": 1.0, "unitPrice": 4000.0, "amount": 3800.0, "note": "数量:1 × 单价:4000；明细构成:3800+200；⚠️单价4000/金额填3800", "audit": {"type": "formula_mismatch", "suggested_amt": 4000.0, "desc": "原表单价为3800+200=4000，但金额手填了3800"}}, {"id": "init_105", "excelRow": 105, "type": "expense", "date": "2025-12-21", "title": "种树机械费", "category": "机械运输与清运", "qty": 1.0, "unitPrice": 3000.0, "amount": 3000.0, "note": "", "audit": null}, {"id": "init_106", "excelRow": 106, "type": "expense", "date": "2025-12-25", "title": "挖机", "category": "机械运输与清运", "qty": 1.0, "unitPrice": 1000.0, "amount": 1000.0, "note": "", "audit": null}, {"id": "init_107", "excelRow": 107, "type": "expense", "date": "2025-12-30", "title": "年货", "category": "餐饮后勤与招待", "qty": 5.0, "unitPrice": 238.0, "amount": 1190.0, "note": "数量:5 × 单价:238", "audit": null}, {"id": "init_108", "excelRow": 108, "type": "expense", "date": "2025-12-30", "title": "石材", "category": "石材与硬景建材", "qty": 1, "unitPrice": 25000.0, "amount": 25000.0, "note": "原表第108行未填日期(暂沿用上行)", "audit": null}, {"id": "init_109", "excelRow": 109, "type": "expense", "date": "2025-12-30", "title": "未注明款项（原表第109行）", "category": "待确认款项", "qty": 1, "unitPrice": 14000.0, "amount": 14000.0, "note": "原表第109行未填日期(暂沿用上行)", "audit": {"type": "missing_title", "suggested_amt": 14000.0, "desc": "原表第109行未填内容名称（紧随第108行石材25000之后）"}}, {"id": "init_110", "excelRow": 110, "type": "expense", "date": "2026-03-09", "title": "鲁冰花", "category": "苗木绿化采购", "qty": 3500.0, "unitPrice": 12.0, "amount": 42000.0, "note": "数量:3500 × 单价:12", "audit": null}, {"id": "init_111", "excelRow": 111, "type": "expense", "date": "2026-03-09", "title": "苗木", "category": "苗木绿化采购", "qty": 1, "unitPrice": 7505.0, "amount": 7505.0, "note": "原表第111行未填日期(暂沿用上行)", "audit": null}, {"id": "init_112", "excelRow": 112, "type": "expense", "date": "2026-03-09", "title": "苗木", "category": "苗木绿化采购", "qty": 1, "unitPrice": 9100.0, "amount": 9100.0, "note": "原表第112行未填日期(暂沿用上行)", "audit": null}, {"id": "init_113", "excelRow": 113, "type": "expense", "date": "2026-03-09", "title": "劳务", "category": "人工劳务", "qty": 1, "unitPrice": 100.0, "amount": 100.0, "note": "原表第113行未填日期(暂沿用上行)", "audit": null}, {"id": "init_114", "excelRow": 114, "type": "expense", "date": "2026-03-09", "title": "运垃圾", "category": "机械运输与清运", "qty": 1, "unitPrice": 1000.0, "amount": 1000.0, "note": "原表第114行未填日期(暂沿用上行)", "audit": null}, {"id": "init_115", "excelRow": 115, "type": "expense", "date": "2026-03-09", "title": "运费", "category": "机械运输与清运", "qty": 1, "unitPrice": 700.0, "amount": 700.0, "note": "原表第115行未填日期(暂沿用上行)", "audit": null}, {"id": "init_116", "excelRow": 116, "type": "expense", "date": "2026-03-09", "title": "运费", "category": "机械运输与清运", "qty": 1, "unitPrice": 850.0, "amount": 850.0, "note": "原表第116行未填日期(暂沿用上行)", "audit": null}, {"id": "init_117", "excelRow": 117, "type": "expense", "date": "2026-03-09", "title": "运费", "category": "机械运输与清运", "qty": 1, "unitPrice": 900.0, "amount": 900.0, "note": "原表第117行未填日期(暂沿用上行)", "audit": null}, {"id": "init_118", "excelRow": 118, "type": "expense", "date": "2026-03-05", "title": "9红枫", "category": "苗木绿化采购", "qty": 1, "unitPrice": 3150.0, "amount": 3150.0, "note": "", "audit": null}, {"id": "init_119", "excelRow": 119, "type": "expense", "date": "2026-03-05", "title": "二月兰", "category": "苗木绿化采购", "qty": 1, "unitPrice": 1950.0, "amount": 1950.0, "note": "", "audit": null}, {"id": "init_120", "excelRow": 120, "type": "expense", "date": "2026-03-05", "title": "运费", "category": "机械运输与清运", "qty": 1, "unitPrice": 580.0, "amount": 580.0, "note": "", "audit": null}, {"id": "init_121", "excelRow": 121, "type": "expense", "date": "2026-04-15", "title": "绣球", "category": "苗木绿化采购", "qty": 1, "unitPrice": 14800.0, "amount": 14800.0, "note": "", "audit": null}, {"id": "init_122", "excelRow": 122, "type": "expense", "date": "2026-04-15", "title": "运费", "category": "机械运输与清运", "qty": 1, "unitPrice": 1700.0, "amount": 1700.0, "note": "", "audit": null}, {"id": "init_123", "excelRow": 123, "type": "expense", "date": "2026-04-27", "title": "草皮", "category": "苗木绿化采购", "qty": 1, "unitPrice": 0.0, "amount": 0.0, "note": "⚠️原表文本格式漏算¥540", "audit": {"type": "text_number", "suggested_amt": 540.0, "desc": "原表金额含回车换行符('540\\n')，被Excel的SUM跳过漏算"}}, {"id": "init_124", "excelRow": 124, "type": "expense", "date": "2026-05-11", "title": "波斯菊种子", "category": "苗木绿化采购", "qty": 1, "unitPrice": 1050.0, "amount": 1050.0, "note": "", "audit": null}, {"id": "init_125", "excelRow": 125, "type": "expense", "date": "2026-05-13", "title": "吃饭", "category": "餐饮后勤与招待", "qty": 80.0, "unitPrice": 80.0, "amount": 80.0, "note": "", "audit": null}, {"id": "init_126", "excelRow": 126, "type": "expense", "date": "2026-05-13", "title": "垃圾袋", "category": "五金工具与辅材", "qty": 150.0, "unitPrice": 150.0, "amount": 150.0, "note": "", "audit": null}, {"id": "init_127", "excelRow": 127, "type": "expense", "date": "2026-05-13", "title": "石材", "category": "石材与硬景建材", "qty": 1, "unitPrice": 40000.0, "amount": 40000.0, "note": "", "audit": null}, {"id": "init_128", "excelRow": 128, "type": "expense", "date": "2026-05-14", "title": "粽子", "category": "餐饮后勤与招待", "qty": 1, "unitPrice": 890.0, "amount": 890.0, "note": "", "audit": null}, {"id": "init_130", "excelRow": 130, "type": "expense", "date": "2026-05-14", "title": "广告", "category": "景观小品与广告", "qty": 1, "unitPrice": 6000.0, "amount": 6000.0, "note": "原表第130行未填日期(暂沿用上行)", "audit": null}, {"id": "init_131", "excelRow": 131, "type": "expense", "date": "2026-05-14", "title": "波斯菊苗", "category": "苗木绿化采购", "qty": 1, "unitPrice": 725.0, "amount": 725.0, "note": "原表第131行未填日期(暂沿用上行)", "audit": null}, {"id": "init_132", "excelRow": 132, "type": "expense", "date": "2026-05-14", "title": "运费", "category": "机械运输与清运", "qty": 1, "unitPrice": 150.0, "amount": 150.0, "note": "原表第132行未填日期(暂沿用上行)", "audit": null}, {"id": "init_133", "excelRow": 133, "type": "expense", "date": "2026-05-14", "title": "垃圾袋", "category": "五金工具与辅材", "qty": 1, "unitPrice": 75.0, "amount": 75.0, "note": "原表第133行未填日期(暂沿用上行)", "audit": null}, {"id": "init_134", "excelRow": 134, "type": "expense", "date": "2026-05-14", "title": "人工", "category": "人工劳务", "qty": 1, "unitPrice": 20000.0, "amount": 20000.0, "note": "原表第134行未填日期(暂沿用上行)", "audit": null}, {"id": "init_135", "excelRow": 135, "type": "expense", "date": "2026-10-22", "title": "乔木种植", "category": "苗木绿化采购", "qty": 1, "unitPrice": 7200.0, "amount": 7200.0, "note": "", "audit": null}, {"id": "init_136", "excelRow": 136, "type": "expense", "date": "2026-10-27", "title": "橘子树种植", "category": "苗木绿化采购", "qty": 1, "unitPrice": 3138.0, "amount": 3138.0, "note": "原表日期写为10.57", "audit": null}, {"id": "init_137", "excelRow": 137, "type": "expense", "date": "2026-10-27", "title": "运费", "category": "机械运输与清运", "qty": 1, "unitPrice": 650.0, "amount": 650.0, "note": "原表第137行未填日期(暂沿用上行)", "audit": null}, {"id": "init_138", "excelRow": 138, "type": "expense", "date": "2026-11-05", "title": "绣球补种", "category": "苗木绿化采购", "qty": 1, "unitPrice": 3120.0, "amount": 3120.0, "note": "", "audit": null}, {"id": "init_139", "excelRow": 139, "type": "expense", "date": "2026-11-05", "title": "运费", "category": "机械运输与清运", "qty": 1, "unitPrice": 224.0, "amount": 224.0, "note": "原表第139行未填日期(暂沿用上行)", "audit": null}];
+
+    let records = [];
+    let currentTab = 'list';
+    let filterCat = 'ALL';
+    let auditExpanded = false;
+    let activeChartSlice = -1;
+    let expandedRankCat = null;
+
+    // Modal state
+    let editingId = null;
+    let formType = 'expense';
+    let formCat = '苗木绿化采购';
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          records = JSON.parse(raw);
+          return;
+        }
+      } catch (e) {}
+      records = JSON.parse(JSON.stringify(INITIAL_RECORDS));
+      saveData();
+    }
+
+    function saveData() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+      } catch (e) {}
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.style.display = 'block';
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => { el.style.display = 'none'; }, 2200);
+    }
+
+    function fmtMoney(n) {
+      const abs = Math.abs(n);
+      const s = abs.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return (n < 0 ? '-¥' : '¥') + s;
+    }
+
+    function getTotals() {
+      let loanIn = 0, loanOut = 0, income = 0, expense = 0;
+      records.forEach(r => {
+        const amt = Number(r.amount) || 0;
+        if (r.type === 'loan_in') loanIn += amt;
+        else if (r.type === 'loan_repay') loanOut += amt;
+        else if (r.type === 'income') income += amt;
+        else expense += amt;
+      });
+      const netLoan = loanIn - loanOut;
+      const pool = netLoan + income;
+      const cash = pool - expense;
+      return { loanIn, loanOut, netLoan, income, expense, pool, cash };
+    }
+
+    function renderHero() {
+      const t = getTotals();
+      const cashEl = document.getElementById('hero-cash');
+      cashEl.textContent = fmtMoney(t.cash);
+      cashEl.style.color = t.cash < 0 ? '#fecaca' : '#ffffff';
+
+      const pct = t.pool > 0 ? Math.min(100, Math.max(0, (t.expense / t.pool) * 100)) : 0;
+      document.getElementById('hero-bar').style.width = pct.toFixed(1) + '%';
+      document.getElementById('hero-pool-txt').textContent = '可用资金池 ' + fmtMoney(t.pool);
+      document.getElementById('hero-ratio-txt').textContent = '已花 ' + pct.toFixed(1) + '%';
+
+      document.getElementById('stat-income').textContent = fmtMoney(t.income);
+      document.getElementById('stat-expense').textContent = fmtMoney(t.expense);
+      document.getElementById('stat-loan').textContent = fmtMoney(t.netLoan);
+    }
+
+    function renderAuditBanner() {
+      const pending = records.filter(r => r.audit);
+      const box = document.getElementById('audit-container');
+      if (!pending.length) {
+        box.style.display = 'none';
+        return;
+      }
+      box.style.display = 'block';
+      const diffSum = pending.reduce((s, r) => {
+        if (r.audit.type === 'missing_title') return s;
+        return s + (r.audit.suggested_amt - r.amount);
+      }, 0);
+
+      let itemsHtml = '';
+      if (auditExpanded) {
+        itemsHtml = `<div class="audit-body">` + pending.map(r => {
+          let actionBtns = '';
+          if (r.audit.type === 'missing_title') {
+            actionBtns = `
+              <button class="btn-xs btn-amber" onclick="resolveTitle('${r.id}','石材尾款/进度款','石材与硬景建材')">归入石材</button>
+              <button class="btn-xs btn-ghost" onclick="openEditModal('${r.id}')">改名</button>
+            `;
+          } else {
+            const diff = r.audit.suggested_amt - r.amount;
+            actionBtns = `
+              <button class="btn-xs btn-amber" onclick="resolveAuditAmt('${r.id}', ${r.audit.suggested_amt})">补入+${diff}</button>
+              <button class="btn-xs btn-ghost" onclick="dismissAudit('${r.id}')">保持原样</button>
+            `;
+          }
+          return `
+            <div class="audit-item">
+              <div class="audit-item-info">
+                <div class="audit-item-name">${r.date} · ${r.title}（现计 ¥${r.amount}）</div>
+                <div class="audit-item-desc">${r.audit.desc}</div>
+              </div>
+              <div class="audit-btns">${actionBtns}</div>
+            </div>
+          `;
+        }).join('') + `</div>`;
+      }
+
+      box.innerHTML = `
+        <div class="audit-card">
+          <div class="audit-header" onclick="auditExpanded=!auditExpanded;renderAuditBanner()">
+            <div class="audit-title">
+              <span>⚠️ 原 Excel 表发现 ${pending.length} 处待核对项${diffSum > 0 ? '（差额 ¥' + diffSum.toLocaleString() + '）' : ''}</span>
+            </div>
+            <div class="audit-toggle">${auditExpanded ? '收起 ▲' : '点此核对 ▼'}</div>
+          </div>
+          ${itemsHtml}
+        </div>
+      `;
+    }
+
+    function resolveAuditAmt(id, newAmt) {
+      const r = records.find(x => x.id === id);
+      if (!r) return;
+      r.amount = newAmt;
+      r.audit = null;
+      saveData();
+      refreshAll();
+      showToast('已更新金额，手头现金已自动重算');
+    }
+
+    function resolveTitle(id, newTitle, newCat) {
+      const r = records.find(x => x.id === id);
+      if (!r) return;
+      r.title = newTitle;
+      r.category = newCat;
+      r.audit = null;
+      saveData();
+      refreshAll();
+      showToast('已归入「' + newCat + '」');
+    }
+
+    function dismissAudit(id) {
+      const r = records.find(x => x.id === id);
+      if (!r) return;
+      r.audit = null;
+      saveData();
+      refreshAll();
+      showToast('已确认保留原表金额');
+    }
+
+    function populateFilters() {
+      const months = new Set();
+      records.forEach(r => { if (r.date && r.date.length >= 7) months.add(r.date.slice(0, 7)); });
+      const sortedM = Array.from(months).sort().reverse();
+      const sel = document.getElementById('month-select');
+      const prev = sel.value || 'ALL';
+      sel.innerHTML = `<option value="ALL">全部月份</option>` +
+        sortedM.map(m => `<option value="${m}">${m}</option>`).join('');
+      if (sortedM.includes(prev)) sel.value = prev;
+
+      const chipBox = document.getElementById('cat-filter-chips');
+      const allChips = [{ key: 'ALL', label: '全部流水' }, ...CATEGORIES.map(c => ({ key: c.key, label: c.icon + ' ' + c.key }))];
+      chipBox.innerHTML = allChips.map(c =>
+        `<div class="chip ${filterCat === c.key ? 'active' : ''}" onclick="filterCat='${c.key}';populateFilters();renderList()">${c.label}</div>`
+      ).join('');
+    }
+
+    function weekdayStr(iso) {
+      const d = new Date(iso + 'T00:00:00');
+      if (isNaN(d)) return '';
+      return ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+    }
+
+    function renderList() {
+      const q = (document.getElementById('search-input').value || '').trim().toLowerCase();
+      const m = document.getElementById('month-select').value;
+
+      const filtered = records.filter(r => {
+        if (m !== 'ALL' && (!r.date || !r.date.startsWith(m))) return false;
+        if (filterCat !== 'ALL' && r.category !== filterCat) return false;
+        if (q) {
+          const hay = (r.title + ' ' + r.category + ' ' + (r.note || '') + ' ' + r.amount).toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      let expSum = 0, incSum = 0;
+      filtered.forEach(r => {
+        if (r.type === 'expense') expSum += r.amount;
+        else if (r.type === 'income') incSum += r.amount;
+      });
+
+      document.getElementById('list-summary-bar').innerHTML =
+        `<span>共筛选出 <strong>${filtered.length}</strong> 笔记录</span>` +
+        `<span>支出合计：<strong>${fmtMoney(expSum)}</strong></span>`;
+
+      // Group by date descending
+      const byDate = {};
+      filtered.forEach(r => {
+        const d = r.date || '未填日期';
+        if (!byDate[d]) byDate[d] = [];
+        byDate[d].push(r);
+      });
+
+      const sortedDates = Object.keys(byDate).sort().reverse();
+      const container = document.getElementById('tx-list-container');
+      if (!sortedDates.length) {
+        container.innerHTML = `<div class="card" style="text-align:center;color:var(--sub);padding:32px 16px;">暂无匹配的流水记录，点底部「＋记一笔」添加吧</div>`;
+        return;
+      }
+
+      container.innerHTML = sortedDates.map(d => {
+        const items = byDate[d];
+        const dayExp = items.filter(x => x.type === 'expense').reduce((s, x) => s + x.amount, 0);
+        const rowsHtml = items.map(r => {
+          let ico = '📦', bg = '#f1f5f9', amtCls = 'amt-exp', prefix = '-';
+          if (r.type === 'income') {
+            ico = '🏦'; bg = '#ecfdf5'; amtCls = 'amt-inc'; prefix = '+';
+          } else if (r.type === 'loan_in') {
+            ico = '💰'; bg = '#eff6ff'; amtCls = 'amt-inc'; prefix = '+';
+          } else if (r.type === 'loan_repay') {
+            ico = '💳'; bg = '#fef2f2'; amtCls = 'amt-exp'; prefix = '-';
+          } else if (CAT_MAP[r.category]) {
+            ico = CAT_MAP[r.category].icon;
+            bg = CAT_MAP[r.category].bg;
+          }
+          const warnBadge = r.audit ? `<span class="badge-warn">待核对</span>` : '';
+          const subTxt = [r.category, r.note].filter(Boolean).join(' · ');
+          return `
+            <div class="tx-row" onclick="openEditModal('${r.id}')">
+              <div class="tx-icon" style="background:${bg}">${ico}</div>
+              <div class="tx-main">
+                <div class="tx-title"><span>${escapeHtml(r.title)}</span>${warnBadge}</div>
+                <div class="tx-sub">${escapeHtml(subTxt)}</div>
+              </div>
+              <div class="tx-amt ${amtCls}">${prefix}¥${Number(r.amount).toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="day-group">
+            <div class="day-head">
+              <span>${d} ${weekdayStr(d)}</span>
+              <span>当日支出 ¥${dayExp.toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+            </div>
+            ${rowsHtml}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderCharts() {
+      const expRecords = records.filter(r => r.type === 'expense');
+      const totalExp = expRecords.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+
+      const catStats = CATEGORIES.map(c => {
+        const list = expRecords.filter(r => r.category === c.key);
+        const sum = list.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+        return { ...c, sum, count: list.length, list };
+      }).filter(c => c.sum > 0 || c.count > 0).sort((a, b) => b.sum - a.sum);
+
+      // Donut SVG
+      const svg = document.getElementById('chart-donut');
+      svg.innerHTML = '';
+      const radius = 66;
+      const circ = 2 * Math.PI * radius;
+      let offset = 0;
+
+      catStats.forEach((c, idx) => {
+        if (c.sum <= 0 || totalExp <= 0) return;
+        const frac = c.sum / totalExp;
+        const dash = frac * circ;
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '90');
+        circle.setAttribute('cy', '90');
+        circle.setAttribute('r', String(radius));
+        circle.setAttribute('fill', 'transparent');
+        circle.setAttribute('stroke', c.color);
+        circle.setAttribute('stroke-width', activeChartSlice === idx ? '26' : '20');
+        circle.setAttribute('stroke-dasharray', `${Math.max(dash - 1.5, 0.5)} ${circ}`);
+        circle.setAttribute('stroke-dashoffset', String(-offset));
+        circle.style.cursor = 'pointer';
+        circle.style.opacity = (activeChartSlice === -1 || activeChartSlice === idx) ? '1' : '0.32';
+        circle.onclick = () => {
+          activeChartSlice = (activeChartSlice === idx) ? -1 : idx;
+          renderCharts();
+        };
+        svg.appendChild(circle);
+        offset += dash;
+      });
+
+      if (activeChartSlice === -1 || !catStats[activeChartSlice]) {
+        document.getElementById('donut-lbl').textContent = '工程总花费';
+        document.getElementById('donut-val').textContent = fmtMoney(totalExp);
+        document.getElementById('donut-pct').textContent = '共 ' + expRecords.length + ' 笔';
+      } else {
+        const sel = catStats[activeChartSlice];
+        document.getElementById('donut-lbl').textContent = sel.icon + ' ' + sel.key;
+        document.getElementById('donut-val').textContent = fmtMoney(sel.sum);
+        document.getElementById('donut-pct').textContent = ((sel.sum / totalExp) * 100).toFixed(1) + '% (' + sel.count + '笔)';
+      }
+
+      // Rank list
+      const rankEl = document.getElementById('rank-list');
+      rankEl.innerHTML = catStats.map((c, idx) => {
+        const pct = totalExp > 0 ? ((c.sum / totalExp) * 100) : 0;
+        const isOpen = expandedRankCat === c.key;
+        let detailHtml = '';
+        if (isOpen) {
+          const topItems = [...c.list].sort((a, b) => b.amount - a.amount);
+          detailHtml = `<div class="rank-detail">` + topItems.map(it => `
+            <div class="rank-detail-item" onclick="event.stopPropagation();openEditModal('${it.id}')">
+              <span>${it.date} · ${escapeHtml(it.title)}</span>
+              <strong>¥${Number(it.amount).toLocaleString('zh-CN', {minimumFractionDigits:2})}</strong>
+            </div>
+          `).join('') + `</div>`;
+        }
+        return `
+          <div class="rank-row" onclick="expandedRankCat = (expandedRankCat==='${c.key}' ? null : '${c.key}'); activeChartSlice=${idx}; renderCharts();">
+            <div class="rank-top">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="width:28px;height:28px;border-radius:8px;background:${c.bg};display:inline-flex;align-items:center;justify-content:center;">${c.icon}</span>
+                <span style="font-weight:700;">${c.key}</span>
+                <span style="font-size:12px;color:var(--sub);">${pct.toFixed(1)}% · ${c.count}笔</span>
+              </div>
+              <div style="font-weight:800;font-variant-numeric:tabular-nums;">${fmtMoney(c.sum)}</div>
+            </div>
+            <div class="rank-bar-bg">
+              <div class="rank-bar-fg" style="width:${pct.toFixed(1)}%;background:${c.color}"></div>
+            </div>
+            ${detailHtml}
+          </div>
+        `;
+      }).join('');
+
+      // Monthly bar chart
+      const mMap = {};
+      expRecords.forEach(r => {
+        const m = (r.date || '未知').slice(0, 7);
+        mMap[m] = (mMap[m] || 0) + (Number(r.amount) || 0);
+      });
+      const mKeys = Object.keys(mMap).sort();
+      const maxM = Math.max(...Object.values(mMap), 1);
+      document.getElementById('monthly-bars').innerHTML = mKeys.map(m => {
+        const val = mMap[m];
+        const w = ((val / maxM) * 100).toFixed(1);
+        return `
+          <div class="month-row">
+            <div class="month-lbl">${m}</div>
+            <div class="month-track"><div class="month-fill" style="width:${w}%"></div></div>
+            <div class="month-val">¥${Math.round(val).toLocaleString('zh-CN')}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderWallet() {
+      const t = getTotals();
+      document.getElementById('w-loan-in').textContent = fmtMoney(t.loanIn);
+      document.getElementById('w-loan-out').textContent = fmtMoney(t.loanOut);
+      document.getElementById('w-income').textContent = fmtMoney(t.income);
+      document.getElementById('w-expense').textContent = fmtMoney(t.expense);
+      document.getElementById('w-cash').textContent = fmtMoney(t.cash);
+
+      const funds = records.filter(r => r.type !== 'expense').sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      document.getElementById('funding-history').innerHTML = funds.map(f => {
+        const isPlus = (f.type === 'income' || f.type === 'loan_in');
+        const badge = f.type === 'income' ? '🏦 甲方回款' : (f.type === 'loan_in' ? '💰 借入资金' : '💳 归还借款');
+        return `
+          <div class="tx-row" style="padding:10px 4px;" onclick="openEditModal('${f.id}')">
+            <div class="tx-main">
+              <div class="tx-title">${escapeHtml(f.title)}</div>
+              <div class="tx-sub">${f.date} · ${badge} ${f.note ? '· ' + escapeHtml(f.note) : ''}</div>
+            </div>
+            <div class="tx-amt ${isPlus ? 'amt-inc' : 'amt-exp'}">${isPlus ? '+' : '-'}${fmtMoney(f.amount)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      ['list', 'charts', 'wallet', 'tools'].forEach(t => {
+        document.getElementById('view-' + t).style.display = (t === tab) ? 'block' : 'none';
+        document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+      });
+      if (tab === 'charts') renderCharts();
+      if (tab === 'wallet') renderWallet();
+    }
+
+    // Modal logic
+    function todayISO() {
+      const d = new Date();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${d.getFullYear()}-${m}-${day}`;
+    }
+
+    function setFormType(type) {
+      formType = type;
+      document.getElementById('seg-expense').classList.toggle('active', type === 'expense');
+      document.getElementById('seg-income').classList.toggle('active', type === 'income');
+      document.getElementById('seg-loan').classList.toggle('active', type === 'loan_in' || type === 'loan_repay');
+
+      const loanSub = document.getElementById('loan-sub-seg');
+      loanSub.style.display = (type === 'loan_in' || type === 'loan_repay') ? 'flex' : 'none';
+      document.getElementById('btn-loan-repay').classList.toggle('active', type === 'loan_repay');
+      document.getElementById('btn-loan-in').classList.toggle('active', type === 'loan_in');
+
+      document.getElementById('cat-picker-wrap').style.display = (type === 'expense') ? 'block' : 'none';
+      renderModalCategories();
+    }
+
+    function renderModalCategories() {
+      const grid = document.getElementById('modal-cat-grid');
+      grid.innerHTML = CATEGORIES.map(c => `
+        <div class="cat-pick ${formCat === c.key ? 'active' : ''}" onclick="formCat='${c.key}';renderModalCategories()">
+          <span>${c.icon}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.key.replace('与','')}</span>
+        </div>
+      `).join('');
+
+      const tagRow = document.getElementById('quick-tag-row');
+      if (formType === 'expense' && CAT_MAP[formCat]) {
+        tagRow.innerHTML = CAT_MAP[formCat].tags.map(t =>
+          `<span class="q-tag" onclick="document.getElementById('f-title').value='${t}'">${t}</span>`
+        ).join('');
+      } else if (formType === 'income') {
+        tagRow.innerHTML = ['甲方进度回款', '甲方结算款', '签证增项回款'].map(t =>
+          `<span class="q-tag" onclick="document.getElementById('f-title').value='${t}'">${t}</span>`
+        ).join('');
+      } else {
+        tagRow.innerHTML = ['归还部分借款本金', '新增周转借款'].map(t =>
+          `<span class="q-tag" onclick="document.getElementById('f-title').value='${t}'">${t}</span>`
+        ).join('');
+      }
+    }
+
+    function calcTotalFromQty() {
+      const q = parseFloat(document.getElementById('f-qty').value);
+      const p = parseFloat(document.getElementById('f-price').value);
+      if (!isNaN(q) && !isNaN(p)) {
+        document.getElementById('f-amount').value = (Math.round(q * p * 100) / 100).toString();
+      }
+    }
+
+    function openAddModal(defaultType) {
+      editingId = null;
+      document.getElementById('modal-heading').textContent = '记一笔新流水';
+      document.getElementById('btn-delete-tx').style.display = 'none';
+      document.getElementById('f-title').value = '';
+      document.getElementById('f-qty').value = '';
+      document.getElementById('f-price').value = '';
+      document.getElementById('f-amount').value = '';
+      document.getElementById('f-date').value = todayISO();
+      document.getElementById('f-note').value = '';
+      formCat = '苗木绿化采购';
+      setFormType(defaultType || 'expense');
+      document.getElementById('tx-modal').classList.add('open');
+    }
+
+    function openEditModal(id) {
+      const r = records.find(x => x.id === id);
+      if (!r) return;
+      editingId = id;
+      document.getElementById('modal-heading').textContent = '修改 / 查看流水明细';
+      document.getElementById('btn-delete-tx').style.display = 'block';
+      formCat = CAT_MAP[r.category] ? r.category : '苗木绿化采购';
+      setFormType(r.type || 'expense');
+      document.getElementById('f-title').value = r.title || '';
+      document.getElementById('f-qty').value = r.qty || '';
+      document.getElementById('f-price').value = r.unitPrice || '';
+      document.getElementById('f-amount').value = r.amount;
+      document.getElementById('f-date').value = r.date || todayISO();
+      document.getElementById('f-note').value = r.note || '';
+      document.getElementById('tx-modal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('tx-modal').classList.remove('open');
+    }
+
+    function saveRecord() {
+      const title = document.getElementById('f-title').value.trim() ||
+        (formType === 'income' ? '甲方回款' : formType === 'loan_repay' ? '归还借款' : formType === 'loan_in' ? '新增借款' : formCat);
+      const amt = parseFloat(document.getElementById('f-amount').value);
+      if (isNaN(amt) || amt < 0) {
+        alert('请填写有效的金额！');
+        return;
+      }
+      const date = document.getElementById('f-date').value || todayISO();
+      const qty = parseFloat(document.getElementById('f-qty').value) || 1;
+      const unitPrice = parseFloat(document.getElementById('f-price').value) || amt;
+      const note = document.getElementById('f-note').value.trim();
+      const category = formType === 'expense' ? formCat : (formType === 'income' ? '甲方回款' : '工程借款');
+
+      if (editingId) {
+        const idx = records.findIndex(x => x.id === editingId);
+        if (idx >= 0) {
+          records[idx] = { ...records[idx], type: formType, title, category, qty, unitPrice, amount: amt, date, note, audit: null };
+        }
+        showToast('修改已保存！');
+      } else {
+        records.unshift({
+          id: 'tx_' + Date.now(),
+          type: formType,
+          title,
+          category,
+          qty,
+          unitPrice,
+          amount: amt,
+          date,
+          note,
+          audit: null
+        });
+        showToast('记账成功！手头现金已更新');
+      }
+      saveData();
+      closeModal();
+      refreshAll();
+    }
+
+    function deleteCurrentRecord() {
+      if (!editingId) return;
+      if (!confirm('确定要删除这笔记录吗？删除后现金余额将重新计算。')) return;
+      records = records.filter(x => x.id !== editingId);
+      saveData();
+      closeModal();
+      refreshAll();
+      showToast('已删除该笔流水');
+    }
+
+    // Export CSV / JSON
+    function exportCSV() {
+      const t = getTotals();
+      const header = ['发生日期', '收支类型', '费用分类', '事项内容', '数量', '单价(元)', '金额(元)', '备注'];
+      const typeName = { expense: '工程支出', income: '甲方回款', loan_in: '借入资金', loan_repay: '归还借款' };
+      const sorted = [...records].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      const lines = [
+        ['【项目资金汇总】', `借款净额:${t.netLoan.toFixed(2)}`, `甲方回款:${t.income.toFixed(2)}`, `工程总支出:${t.expense.toFixed(2)}`, `当前手头现金:${t.cash.toFixed(2)}`, '', '', ''],
+        [],
+        header
+      ];
+      sorted.forEach(r => {
+        lines.push([
+          r.date || '',
+          typeName[r.type] || '工程支出',
+          r.category || '',
+          `"${(r.title || '').replace(/"/g, '""')}"`,
+          r.qty || 1,
+          r.unitPrice || r.amount,
+          r.amount,
+          `"${(r.note || '').replace(/"/g, '""')}"`
+        ]);
+      });
+      const csvContent = '\uFEFF' + lines.map(row => row.join(',')).join('\r\n');
+      downloadBlob(csvContent, `工程记账明细_${todayISO()}.csv`, 'text/csv;charset=utf-8;');
+      showToast('已导出 Excel 对账表');
+    }
+
+    function exportJSON() {
+      const content = JSON.stringify(records, null, 2);
+      downloadBlob(content, `工程记账备份_${todayISO()}.json`, 'application/json');
+      showToast('备份包已保存');
+    }
+
+    function importJSON(ev) {
+      const file = ev.target.files && ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (!Array.isArray(parsed)) throw new Error('bad format');
+          records = parsed;
+          saveData();
+          refreshAll();
+          showToast('成功恢复 ' + parsed.length + ' 条记账数据！');
+        } catch (e) {
+          alert('备份文件格式不正确，请选择之前导出的 .json 备份文件。');
+        }
+      };
+      reader.readAsText(file);
+      ev.target.value = '';
+    }
+
+    function resetToFactory() {
+      if (!confirm('确定要清空新记的账目，恢复到刚从 Excel 导入时的初始状态吗？')) return;
+      records = JSON.parse(JSON.stringify(INITIAL_RECORDS));
+      saveData();
+      refreshAll();
+      showToast('已恢复初始账单');
+    }
+
+    function downloadBlob(content, filename, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"']/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
+    }
+
+    function refreshAll() {
+      renderHero();
+      renderAuditBanner();
+      populateFilters();
+      renderList();
+      if (currentTab === 'charts') renderCharts();
+      if (currentTab === 'wallet') renderWallet();
+    }
+
+    loadData();
+    refreshAll();
+  </script>
+</body>
+</html>
